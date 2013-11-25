@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+  http://www.springframework.org/schema/beans/spring-beans.xsd
+  http://www.springframework.org/schema/context
+  http://www.springframework.org/schema/context/spring-context.xsd
+  http://www.springframework.org/schema/rabbit
+  http://www.springframework.org/schema/rabbit/spring-rabbit-1.2.xsd">
+
+	<context:annotation-config />
+	<context:component-scan base-package="quatrocircle.addressbook" />
+
+
+	<rabbit:connection-factory id="connectionFactory"
+		host="localhost" username="guest" password="guest" />
+
+
+	<rabbit:template id="amqpTemplate" connection-factory="connectionFactory"
+		exchange="myExchange" routing-key="*" reply-queue="ReadReplyQueue">
+		<rabbit:reply-listener />
+	</rabbit:template>
+
+
+	<rabbit:admin connection-factory="connectionFactory" />
+
+	<rabbit:queue name="ReadQueue" />
+	<rabbit:queue name="UpdateQueue" />
+	<rabbit:queue name="DeleteQueue" />
+	<rabbit:queue name="CreateQueue" />
+	<rabbit:queue name="ReadReplyQueue" />
+
+	<rabbit:topic-exchange name="myExchange">
+		<rabbit:bindings>
+			<rabbit:binding queue="ReadQueue" pattern="crud.read" />
+			<rabbit:binding queue="UpdateQueue" pattern="crud.update" />
+			<rabbit:binding queue="DeleteQueue" pattern="crud.delete" />
+			<rabbit:binding queue="CreateQueue" pattern="crud.create" />
+		</rabbit:bindings>
+	</rabbit:topic-exchange>
+
+	<rabbit:listener-container
+		connection-factory="connectionFactory">
+		<rabbit:listener ref="addressBookListener" method="read"
+			queue-names="ReadQueue" />
+		<rabbit:listener ref="addressBookListener" method="update"
+			queue-names="UpdateQueue" />
+		<rabbit:listener ref="addressBookListener" method="delete"
+			queue-names="DeleteQueue" />
+		<rabbit:listener ref="addressBookListener" method="create"
+			queue-names="CreateQueue" />
+	</rabbit:listener-container>
+
+</beans>
